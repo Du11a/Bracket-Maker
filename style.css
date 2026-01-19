@@ -1,0 +1,355 @@
+:root {
+    --bg-color: #121212;
+    --panel-bg: #1e1e1e;
+    --text-main: #ffffff;
+    --text-dim: #aaaaaa;
+    --accent: #ff4757;
+    --accent-hover: #ff6b81;
+    --match-bg: #2f3542;
+    --line-color: #57606f;
+    --winner-bg: #2ed573;
+    --winner-text: #121212;
+}
+
+* {
+    box-sizing: border-box;
+    margin: 0;
+    padding: 0;
+    font-family: 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+}
+
+body {
+    background-color: var(--bg-color);
+    color: var(--text-main);
+    height: 100vh;
+    height: 100dvh;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    padding: 20px;
+    overflow: hidden;
+}
+
+header {
+    text-align: center;
+    margin-bottom: 30px;
+}
+
+h1 {
+    color: var(--accent);
+    margin-bottom: 10px;
+}
+
+main {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    width: 100%;
+    overflow: hidden;
+}
+
+.panel {
+    background-color: var(--panel-bg);
+    padding: 25px;
+    border-radius: 8px;
+    width: 100%;
+    max-width: 600px;
+    box-shadow: 0 4px 15px rgba(0,0,0,0.5);
+}
+
+.form-group {
+    margin-bottom: 15px;
+}
+
+label {
+    display: block;
+    margin-bottom: 8px;
+    font-weight: bold;
+    color: var(--text-dim);
+}
+
+#tournament-name {
+    width: 100%;
+    padding: 10px;
+    background-color: #000000;
+    border: 1px solid #333;
+    color: white;
+    border-radius: 4px;
+}
+
+textarea {
+    width: 100%;
+    height: 150px;
+    background-color: #000000;
+    border: 1px solid #333;
+    color: white;
+    padding: 10px;
+    border-radius: 4px;
+    resize: vertical;
+}
+
+select {
+    width: 100%;
+    padding: 10px;
+    background-color: #000000;
+    border: 1px solid #333;
+    color: white;
+    border-radius: 4px;
+}
+
+button {
+    background-color: var(--accent);
+    color: white;
+    border: none;
+    padding: 10px 20px;
+    border-radius: 4px;
+    cursor: pointer;
+    font-weight: bold;
+    font-size: 1rem;
+    transition: 0.2s;
+}
+
+button:hover {
+    background-color: var(--accent-hover);
+}
+
+button.secondary {
+    background-color: #57606f;
+    margin-right: 10px;
+}
+
+.hidden {
+    display: none;
+}
+
+/* Bracket Layout */
+#bracket-view {
+    width: 100%;
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+}
+
+.toolbar {
+    text-align: center;
+    margin-bottom: 20px;
+}
+
+#tournament-title-display {
+    text-align: center;
+    margin: 0 0 20px 0;
+    padding-top: 10px;
+    color: var(--accent);
+    font-size: 2rem;
+    flex-shrink: 0;
+}
+
+.bracket-container {
+    display: flex;
+    padding: 20px;
+    min-width: max-content;
+    transform-origin: top left;
+    transition: transform 0.3s ease;
+}
+
+.round {
+    display: flex;
+    flex-direction: column;
+    justify-content: space-around;
+    margin-right: 30px;
+}
+
+.match {
+    background-color: var(--match-bg);
+    width: 160px;
+    border-radius: 4px;
+    padding: 5px;
+    margin: 10px 0;
+    position: relative;
+    box-shadow: 0 2px 5px rgba(0,0,0,0.3);
+}
+
+.match[draggable="true"] {
+    cursor: grab;
+}
+
+.match {
+    user-select: none;
+    -webkit-user-select: none;
+}
+
+.match.dragging {
+    opacity: 0.5;
+}
+
+.match.drag-over {
+    outline: 2px dashed var(--accent);
+    background-color: rgba(255, 71, 87, 0.1);
+}
+
+/* Connector Lines */
+.round:not(:last-child) .match::after {
+    content: '';
+    position: absolute;
+    right: -30px;
+    top: 50%;
+    width: 30px;
+    height: 2px;
+    background-color: var(--line-color);
+    z-index: -1;
+}
+
+.participant {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 5px 8px;
+    margin: 2px 0;
+    background-color: rgba(0,0,0,0.2);
+    border-radius: 3px;
+    cursor: pointer;
+    transition: background 0.2s;
+    user-select: none;
+    -webkit-user-select: none;
+}
+
+.participant:hover {
+    background-color: rgba(255,255,255,0.05);
+}
+
+.participant.winner {
+    background-color: var(--winner-bg);
+    color: var(--winner-text);
+    font-weight: bold;
+}
+
+.participant.loser {
+    opacity: 0.5;
+}
+
+.name {
+    flex-grow: 1;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    font-size: 0.9rem;
+}
+
+.score {
+    width: 30px;
+    background: transparent;
+    border: none;
+    border-left: 1px solid rgba(255,255,255,0.1);
+    color: inherit;
+    text-align: center;
+    margin-left: 5px;
+}
+
+/* Drag and Drop */
+.participant[draggable="true"] {
+    cursor: grab;
+}
+
+.participant.dragging {
+    opacity: 0.5;
+}
+
+.drop-target {
+    cursor: default;
+    border: 1px dashed #444;
+}
+
+.drop-target.drag-over {
+    background-color: rgba(255, 71, 87, 0.2);
+    border-color: var(--accent);
+    border-style: solid;
+}
+
+.participant.drag-over {
+    background-color: rgba(255, 71, 87, 0.2);
+    outline: 2px dashed var(--accent);
+}
+
+.match-label {
+    width: 100%;
+    background: transparent;
+    border: none;
+    color: var(--text-dim);
+    font-size: 0.75rem;
+    text-align: center;
+    margin-bottom: 4px;
+    padding: 2px;
+}
+
+.match-label:focus {
+    color: var(--text-main);
+    outline: none;
+    background-color: rgba(255,255,255,0.05);
+    border-radius: 2px;
+}
+
+/* Workspace & Sidebar */
+.workspace {
+    display: flex;
+    width: 100%;
+    gap: 20px;
+    align-items: flex-start;
+    flex: 1;
+    overflow: hidden;
+}
+
+.bracket-scroll-wrapper {
+    flex-grow: 1;
+    overflow: auto;
+    padding-bottom: 20px;
+    height: 100%;
+}
+
+#team-sidebar {
+    width: 200px;
+    min-width: 200px;
+    background-color: var(--panel-bg);
+    padding: 15px;
+    border-radius: 8px;
+    max-height: 80vh;
+    overflow-y: auto;
+    position: sticky;
+    top: 20px;
+}
+
+#team-sidebar h3 {
+    color: var(--text-dim);
+    font-size: 1rem;
+    margin-bottom: 10px;
+    border-bottom: 1px solid #333;
+    padding-bottom: 5px;
+}
+
+.sidebar-item {
+    background-color: var(--match-bg);
+    padding: 8px;
+    margin-bottom: 5px;
+    border-radius: 4px;
+    cursor: grab;
+    font-size: 0.9rem;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    user-select: none;
+    -webkit-user-select: none;
+}
+
+.sidebar-item:hover {
+    background-color: #3e4452;
+}
+
+.sidebar-item:active {
+    cursor: grabbing;
+}
+
+.bracket-section {
+    margin-bottom: 40px;
+    border-bottom: 1px solid #333;
+    padding-bottom: 20px;
+}
