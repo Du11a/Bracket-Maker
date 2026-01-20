@@ -16,7 +16,9 @@ class BracketManager {
         document.getElementById('edit-btn').addEventListener('click', () => this.toggleView(true));
         document.getElementById('reset-btn').addEventListener('click', () => this.resetBracket());
         document.getElementById('fit-btn').addEventListener('click', () => this.fitToScreen());
+        document.getElementById('share-btn').addEventListener('click', () => this.shareBracket());
         this.bindEvents();
+        this.checkSharedState();
     }
 
     toggleView(showSetup) {
@@ -47,6 +49,17 @@ class BracketManager {
             }
         });
 
+        // Sidebar Click (Mobile Selection Support)
+        sidebarList.addEventListener('click', (e) => {
+            if (e.target.classList.contains('sidebar-item')) {
+                const wasSelected = e.target.classList.contains('selected');
+                // Deselect all
+                Array.from(sidebarList.children).forEach(el => el.classList.remove('selected'));
+                // Toggle selection
+                if (!wasSelected) e.target.classList.add('selected');
+            }
+        });
+
         // Bracket Container Delegation
         this.container.addEventListener('click', (e) => {
             const participant = e.target.closest('.participant');
@@ -55,6 +68,16 @@ class BracketManager {
                 const match = participant.closest('.match');
                 const { bracketType, rIdx, mIdx } = match.dataset;
                 const { slotKey } = participant.dataset;
+
+                // Check for Sidebar Selection Placement (Mobile)
+                const selectedItem = document.querySelector('.sidebar-item.selected');
+                if (selectedItem) {
+                    this.updateParticipant(bracketType, parseInt(rIdx), parseInt(mIdx), slotKey, selectedItem.textContent);
+                    selectedItem.classList.remove('selected');
+                    this.render();
+                    return;
+                }
+
                 const data = this.getMatchData(bracketType, rIdx, mIdx)[slotKey];
                 
                 if (data.name && data.name !== "BYE") {
@@ -731,6 +754,107 @@ class BracketManager {
         
         // Apply scale with a slight padding factor (0.95)
         this.container.style.transform = `scale(${scale * 0.95})`;
+    }
+
+    async shareBracket() {
+        const state = this.serializeState();
+        const json = JSON.stringify(state);
+        // Encode to Base64, handling Unicode strings safely
+        const encoded = btoa(encodeURIComponent(json));
+        const url = window.location.href.split('#')[0] + '#' + encoded;
+        
+        const shareData = {
+            title: document.getElementById('tournament-title-display').textContent,
+            text: 'Check out my tournament bracket!',
+            url: url
+        };
+
+        if (navigator.share) {
+            try {
+                await navigator.share(shareData);
+            } catch (err) {
+                // User cancelled share
+            }
+        } else {
+            try {
+                await navigator.clipboard.writeText(url);
+                alert('Bracket URL copied to clipboard!');
+            } catch (err) {
+                alert('Could not copy URL automatically. Please copy the URL from the address bar.');
+                window.location.hash = encoded;
+            }
+        }
+    }
+
+    serializeState() {
+        const matches = [];
+        const collect = (arr, type) => {
+            if (!arr) return;
+            arr.forEach((round, rIdx) => {
+                round.forEach((match, mIdx) => {
+                    // Only save matches that have data (winner, scores, or custom label)
+                    if (match.winner || match.p1.score || match.p2.score || match.label) {
+                        matches.push({
+                            type, rIdx, mIdx,
+                            w: match.winner,
+                            s1: match.p1.score,
+                            s2: match.p2.score,
+                            l: match.label
+                        });
+                    }
+                });
+            });
+        };
+        
+        collect(this.bracket, 'main');
+        collect(this.lBracket, 'losers');
+        collect(this.gfBracket, 'finals');
+
+        return {
+            nm: document.getElementById('tournament-name').value,
+            tms: this.teams,
+            tp: this.type,
+            ms: matches
+        };
+    }
+
+    checkSharedState() {
+        if (window.location.hash && window.location.hash.length > 1) {
+            try {
+                const encoded = window.location.hash.substring(1);
+                const json = decodeURIComponent(atob(encoded));
+                const state = JSON.parse(json);
+                
+                // Restore Setup
+                document.getElementById('tournament-name').value = state.nm || '';
+                document.getElementById('team-input').value = state.tms.join('\n');
+                document.getElementById('bracket-type').value = state.tp;
+                
+                // Generate Structure
+                this.init();
+                
+                // Restore Match Results
+                // We iterate and apply results. Because matches are saved in order (Round 0, 1...),
+                // advancing winners will correctly propagate to subsequent rounds.
+                state.ms.forEach(m => {
+                    const arr = this.getBracketArray(m.type);
+                    if (arr && arr[m.rIdx] && arr[m.rIdx][m.mIdx]) {
+                        const match = arr[m.rIdx][m.mIdx];
+                        match.p1.score = m.s1 || '';
+                        match.p2.score = m.s2 || '';
+                        if (m.l) match.label = m.l;
+                        
+                        if (m.w) {
+                            this.advance(m.type, m.rIdx, m.mIdx, m.w);
+                        }
+                    }
+                });
+                
+                this.render();
+            } catch (e) {
+                console.error('Failed to load shared state:', e);
+            }
+        }
     }
 }
 
